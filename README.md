@@ -288,7 +288,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Development Team
 
-**Created by James Kagua (litmajor)**
+**Created by James Kagua and Alain Juma Muriuki
 
 ## 🆘 Support
 
