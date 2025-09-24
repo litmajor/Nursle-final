@@ -53,10 +53,6 @@ externalPort = 80
 localPort = 8000
 externalPort = 8000
 
-[[ports]]
-localPort = 33519
-externalPort = 3000
-
 [deployment]
 deploymentTarget = "autoscale"
 run = ["bash", "-c", "cd Nursle-final/backend && gunicorn --bind=0.0.0.0:5000 --reuse-port app:app"]
