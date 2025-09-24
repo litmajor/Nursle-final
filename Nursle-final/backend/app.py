@@ -7,6 +7,7 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_session import Session
 from models import db, Nurse, Patient, MedicalHistory, Symptom, TriageRecord, AnalyticsData
+from ai_integration import ai_integration
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -19,6 +20,7 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 db.init_app(app)
 Session(app)
+ai_integration.init_app(app)
 
 # Authentication Routes
 @app.route('/api/signup', methods=['POST'])
@@ -146,37 +148,31 @@ def check_symptoms():
         return jsonify({'error': 'Unauthorized'}), 401
     
     data = request.json
-    symptoms = data['symptoms']
-    age = data.get('age', 30)
-    gender = data.get('gender', 'Unknown')
+    symptoms = data.get('symptoms', '')
+    age = data.get('age')
+    gender = data.get('gender')
     
-    # AI-powered diagnosis simulation
-    diagnosis_options = [
-        {'condition': 'Common Cold', 'confidence': 0.85, 'severity': 'Low'},
-        {'condition': 'Influenza', 'confidence': 0.78, 'severity': 'Medium'},
-        {'condition': 'Pneumonia', 'confidence': 0.65, 'severity': 'High'},
-        {'condition': 'Bronchitis', 'confidence': 0.72, 'severity': 'Medium'},
-        {'condition': 'Allergic Reaction', 'confidence': 0.60, 'severity': 'Low'}
-    ]
+    if not symptoms.strip():
+        return jsonify({'error': 'Symptoms description is required'}), 400
     
-    # Simple AI logic based on symptoms
-    if 'chest pain' in symptoms.lower():
-        diagnosis_options.insert(0, {'condition': 'Chest Pain Syndrome', 'confidence': 0.90, 'severity': 'High'})
-    if 'fever' in symptoms.lower():
-        diagnosis_options[1]['confidence'] += 0.10
+    # Use AI integration for symptom analysis
+    result = ai_integration.process_symptom_check(
+        symptoms=symptoms,
+        age=age,
+        gender=gender,
+        nurse_id=nurse_id
+    )
     
-    # Sort by confidence
-    diagnosis_options.sort(key=lambda x: x['confidence'], reverse=True)
-    
-    return jsonify({
-        'diagnosis': diagnosis_options[:3],
-        'recommendations': [
-            'Monitor vital signs closely',
-            'Ensure patient comfort',
-            'Consider further diagnostic tests if symptoms persist',
-            'Follow up within 24-48 hours'
-        ]
-    })
+    if result['success']:
+        return jsonify(result['data'])
+    else:
+        # Return fallback data with error indication
+        return jsonify({
+            'diagnosis': result['fallback_data']['guidance'],
+            'recommendations': result['fallback_data']['manual_factors'],
+            'error': result['error'],
+            'ai_status': 'unavailable'
+        }), 200
 
 # Triage Analytics Routes
 @app.route('/api/analytics/triage', methods=['GET'])
@@ -218,32 +214,29 @@ def predict_outcome():
     
     data = request.json
     symptoms = data.get('symptoms', '')
-    age = data.get('age', 30)
+    age = data.get('age')
     priority = data.get('priority', 'Medium')
     
-    # AI prediction simulation
-    predictions = {
-        'recovery_time': {
-            'estimated_days': random.randint(3, 14),
-            'confidence': round(random.uniform(0.7, 0.95), 2)
-        },
-        'complications_risk': {
-            'risk_level': random.choice(['Low', 'Medium', 'High']),
-            'probability': round(random.uniform(0.1, 0.4), 2)
-        },
-        'resource_needs': {
-            'bed_days': random.randint(1, 5),
-            'specialist_required': random.choice([True, False]),
-            'follow_up_visits': random.randint(1, 3)
-        },
-        'outcome_prediction': {
-            'full_recovery': round(random.uniform(0.8, 0.98), 2),
-            'partial_recovery': round(random.uniform(0.15, 0.3), 2),
-            'chronic_condition': round(random.uniform(0.02, 0.1), 2)
-        }
-    }
+    if not symptoms.strip():
+        return jsonify({'error': 'Symptoms description is required'}), 400
     
-    return jsonify(predictions)
+    # Use AI integration for predictive analytics
+    result = ai_integration.process_predictive_analytics(
+        symptoms=symptoms,
+        age=age,
+        priority=priority,
+        nurse_id=nurse_id
+    )
+    
+    if result['success']:
+        return jsonify(result['data'])
+    else:
+        # Return fallback predictions with error indication
+        return jsonify({
+            **result['fallback_data'],
+            'error': result['error'],
+            'ai_status': 'unavailable'
+        }), 200
 
 @app.route('/api/analytics/trends', methods=['GET'])
 def get_health_trends():
@@ -277,3 +270,34 @@ if __name__ == '__main__':
         db.create_all()
     port = int(os.environ.get('PORT', 8000))
     app.run(host='0.0.0.0', port=port, debug=True)
+# AI Service Health Routes
+@app.route('/api/ai/health', methods=['GET'])
+def ai_health():
+    nurse_id = session.get('nurse_id')
+    if not nurse_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    health_status = ai_integration.get_ai_health_status()
+    return jsonify(health_status)
+
+@app.route('/api/ai/models/info', methods=['GET'])
+def ai_models_info():
+    nurse_id = session.get('nurse_id')
+    if not nurse_id:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    models_info = {
+        'diagnostic_engine': {
+            'version': app.ai_manager.diagnostic_engine.model_version,
+            'confidence_threshold': app.ai_manager.diagnostic_engine.confidence_threshold,
+            'supported_categories': list(app.ai_manager.diagnostic_engine.symptom_keywords.keys()),
+            'last_updated': app.ai_manager.diagnostic_engine.created_at.isoformat()
+        },
+        'predictive_analytics': {
+            'version': app.ai_manager.predictive_analytics.model_version,
+            'supported_conditions': list(app.ai_manager.predictive_analytics.recovery_models.keys()),
+            'last_updated': app.ai_manager.predictive_analytics.created_at.isoformat()
+        }
+    }
+    
+    return jsonify(models_info)

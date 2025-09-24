@@ -2,6 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
+import AIStatusIndicator from './AIStatusIndicator'
 
 export default function Header({ title = "Health Triage", showThemeToggle = true, showLogout = true }) {
   const { isDark, toggleTheme } = useTheme()
@@ -17,9 +18,9 @@ export default function Header({ title = "Health Triage", showThemeToggle = true
     <header className="bg-slate-700 dark:bg-slate-800 text-white px-6 py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
-          <img 
-            src="/src/assets/nursle-logo.jpg" 
-            alt="Nursle Logo" 
+          <img
+            src="/src/assets/nursle-logo.jpg"
+            alt="Nursle Logo"
             className="w-full h-full object-contain rounded"
           />
         </div>
@@ -38,7 +39,7 @@ export default function Header({ title = "Health Triage", showThemeToggle = true
             </button>
           </div>
         )}
-        
+
         {showThemeToggle && (
           <button
             onClick={toggleTheme}
