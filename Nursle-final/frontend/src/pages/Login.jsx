@@ -11,19 +11,34 @@ export default function Login() {
   const { isDark, toggleTheme } = useTheme()
   const { login } = useAuth()
   const [form, setForm] = useState({
-    username: '',
+    email: '',
     password: ''
   })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+    setError('') // Clear error when user types
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Mock authentication - in real app, verify credentials
-    login(form.username)
-    navigate('/')
+    setLoading(true)
+    setError('')
+    
+    try {
+      const result = await login(form.email, form.password)
+      if (result.success) {
+        navigate('/')
+      } else {
+        setError(result.error || 'Login failed')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -67,16 +82,21 @@ export default function Login() {
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Login</h2>
           
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Username
+                Email
               </label>
               <input 
-                type="text" 
-                name="username" 
-                value={form.username} 
+                type="email" 
+                name="email" 
+                value={form.email} 
                 onChange={handleChange} 
-                placeholder="Username"
+                placeholder="nurse@example.com"
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors duration-300" 
                 required 
               />
@@ -101,8 +121,9 @@ export default function Login() {
               type="submit" 
               variant="primary" 
               className="w-full mt-6"
+              disabled={loading}
             >
-              Log In
+              {loading ? 'Logging In...' : 'Log In'}
             </Button>
           </form>
           

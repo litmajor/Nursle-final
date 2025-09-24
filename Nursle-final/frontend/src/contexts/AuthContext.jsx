@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { apiRequest } from '../api/config'
 
 const AuthContext = createContext()
 
@@ -16,37 +17,54 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing authentication
-    const authStatus = localStorage.getItem('isAuthenticated')
-    const user = localStorage.getItem('currentUser')
-    
-    if (authStatus === 'true' && user) {
-      setIsAuthenticated(true)
-      setCurrentUser(user)
+    // Check for existing authentication by calling dashboard endpoint
+    const checkAuth = async () => {
+      try {
+        const response = await apiRequest('/api/dashboard')
+        setIsAuthenticated(true)
+        setCurrentUser(response.first_name)
+      } catch (error) {
+        setIsAuthenticated(false)
+        setCurrentUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
     
-    setLoading(false)
+    checkAuth()
   }, [])
 
-  const login = (username) => {
-    localStorage.setItem('isAuthenticated', 'true')
-    localStorage.setItem('currentUser', username)
-    setIsAuthenticated(true)
-    setCurrentUser(username)
+  const login = async (email, password) => {
+    try {
+      const response = await apiRequest('/api/login', {
+        method: 'POST',
+        body: { email, password }
+      })
+      setIsAuthenticated(true)
+      setCurrentUser(response.first_name)
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
   }
 
   const logout = () => {
-    localStorage.removeItem('isAuthenticated')
-    localStorage.removeItem('currentUser')
     setIsAuthenticated(false)
     setCurrentUser(null)
+    // Note: Session will be cleared by server when browser session ends
   }
 
-  const register = (name) => {
-    localStorage.setItem('isAuthenticated', 'true')
-    localStorage.setItem('currentUser', name)
-    setIsAuthenticated(true)
-    setCurrentUser(name)
+  const register = async (userData) => {
+    try {
+      await apiRequest('/api/signup', {
+        method: 'POST',
+        body: userData
+      })
+      // After successful registration, automatically log in
+      return await login(userData.email, userData.password)
+    } catch (error) {
+      return { success: false, error: error.message }
+    }
   }
 
   return (
