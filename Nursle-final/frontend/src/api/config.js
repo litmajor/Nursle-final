@@ -1,6 +1,6 @@
 // API configuration for connecting to backend
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://80540686-2f0d-4a76-aca5-3444fc74eca7-00-23edebdpz039y.riker.replit.dev:8000'
+  ? '' // In production, API calls will be relative to the same origin (port 5000)
   : 'https://80540686-2f0d-4a76-aca5-3444fc74eca7-00-23edebdpz039y.riker.replit.dev:8000';
 
 export const apiRequest = async (endpoint, options = {}) => {
