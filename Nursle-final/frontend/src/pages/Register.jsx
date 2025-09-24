@@ -71,6 +71,9 @@ export default function Register() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Health Triage</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Create your Nursle account</p>
+          <Link to="/landing" className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+            ← Back to Home
+          </Link>
         </div>
 
         <Card>
