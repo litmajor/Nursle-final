@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -9,8 +10,8 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 # Config
-app.config['SECRET_KEY'] = 'supersecretkey'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@db:5432/nursledb'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'supersecretkey')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:password@helium:5432/heliumdb')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_TYPE'] = 'filesystem'
 
@@ -51,4 +52,5 @@ def dashboard():
     return jsonify({'first_name': nurse.full_name.split()[0], 'email': nurse.email})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port, debug=True)
