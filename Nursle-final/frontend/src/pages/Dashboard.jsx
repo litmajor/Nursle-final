@@ -123,10 +123,46 @@ export default function Dashboard() {
               <Button 
                 variant="secondary" 
                 className="w-full justify-center"
-                onClick={() => navigate('/triage')}
+                onClick={() => navigate('/symptom-checker')}
               >
-                View All Results
+                AI Symptom Checker
               </Button>
+              <Button 
+                variant="secondary" 
+                className="w-full justify-center"
+                onClick={() => navigate('/analytics')}
+              >
+                Triage Analytics
+              </Button>
+              <Button 
+                variant="secondary" 
+                className="w-full justify-center"
+                onClick={() => navigate('/predictive')}
+              >
+                Predictive Analytics
+              </Button>
+            </div>
+          </Card>
+
+          {/* Medical History Quick Access */}
+          <Card title="Medical History">
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Access comprehensive patient medical history and timeline tracking.
+              </p>
+              <div className="space-y-2">
+                {patients.slice(0, 3).map((patient) => (
+                  <Button
+                    key={patient.id}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full justify-start text-left"
+                    onClick={() => navigate(`/medical-history/${patient.id}`)}
+                  >
+                    {patient.name} - View History
+                  </Button>
+                ))}
+              </div>
             </div>
           </Card>
         </div>

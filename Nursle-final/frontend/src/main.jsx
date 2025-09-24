@@ -1,21 +1,27 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './index.css'
+
+import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
+import ProtectedRoute from './components/ProtectedRoute'
+
+import Login from './pages/Login'
+import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import PatientForm from './pages/PatientForm'
 import TriageResult from './pages/TriageResult'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import ProtectedRoute from './components/ProtectedRoute'
-import { ThemeProvider } from './contexts/ThemeContext'
-import { AuthProvider } from './contexts/AuthContext'
+import MedicalHistory from './pages/MedicalHistory'
+import SymptomChecker from './pages/SymptomChecker'
+import TriageAnalytics from './pages/TriageAnalytics'
+import PredictiveAnalytics from './pages/PredictiveAnalytics'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
+    <AuthProvider>
+      <ThemeProvider>
+        <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -41,12 +47,32 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             } />
             <Route path="/triage" element={
               <ProtectedRoute>
-                <TriageResult />
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/medical-history/:patientId" element={
+              <ProtectedRoute>
+                <MedicalHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="/symptom-checker" element={
+              <ProtectedRoute>
+                <SymptomChecker />
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <TriageAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/predictive" element={
+              <ProtectedRoute>
+                <PredictiveAnalytics />
               </ProtectedRoute>
             } />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
-  </React.StrictMode>,
+        </Router>
+      </ThemeProvider>
+    </AuthProvider>
+  </React.StrictMode>
 )
