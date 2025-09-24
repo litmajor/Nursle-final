@@ -1,7 +1,18 @@
 // API configuration for connecting to backend
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '' // In production, API calls will be relative to the same origin (port 5000)
-  : 'https://80540686-2f0d-4a76-aca5-3444fc74eca7-00-23edebdpz039y.riker.replit.dev:8000';
+const getApiBaseUrl = () => {
+  // In Docker environment, use backend service name
+  if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
+    return 'http://localhost:8000';
+  }
+  // In Replit development environment  
+  if (process.env.NODE_ENV !== 'production' && window.location.hostname.includes('replit.dev')) {
+    return 'https://80540686-2f0d-4a76-aca5-3444fc74eca7-00-23edebdpz039y.riker.replit.dev:8000';
+  }
+  // In production, API calls will be relative to the same origin
+  return '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const apiRequest = async (endpoint, options = {}) => {
   const config = {

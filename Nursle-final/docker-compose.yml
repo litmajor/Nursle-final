@@ -1,22 +1,20 @@
 version: '3.9'
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: nursledb
-    ports:
-      - "5432:5432"
   backend:
     build: ./backend
-    depends_on:
-      - db
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:password@host.docker.internal:5432/heliumdb}
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey}
+      - PORT=8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   frontend:
     build: ./frontend
+    ports:
+      - "5000:5000"
     depends_on:
       - backend
-    ports:
-      - "5173:5173"
+    environment:
+      - NODE_ENV=development
