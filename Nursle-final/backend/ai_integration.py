@@ -1,15 +1,15 @@
 
-"""
-AI Integration Layer for Flask Application
-Connects AI services with Flask routes and database operations
-"""
+
+# AI Integration Layer for Flask Application
+# Connects AI services with Flask routes and database operations
 
 from flask import current_app
-from ai_services import ai_manager, DiagnosisResult, PredictionResult
-from models import db, TriageRecord, AnalyticsData
+from ai_services import ai_manager
+from models import db
 from datetime import datetime
 import json
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,27 +26,25 @@ class AIIntegration:
         app.config.setdefault('AI_ENABLED', True)
         app.config.setdefault('AI_LOG_PREDICTIONS', True)
         app.config.setdefault('AI_CONFIDENCE_THRESHOLD', 0.7)
-        
-        # Store AI manager in app context
         app.ai_manager = ai_manager
+
     
-    def process_symptom_check(self, symptoms: str, age: int = None, 
-                            gender: str = None, nurse_id: int = None) -> dict:
+    def process_symptom_check(self, symptoms: str, age: Optional[int] = None, 
+                            gender: Optional[str] = None, nurse_id: Optional[int] = None) -> dict:
         """
         Process symptom checking request with AI integration
-        
         Args:
             symptoms: Patient symptoms description
             age: Patient age (optional)
             gender: Patient gender (optional)
             nurse_id: ID of nurse making request (optional)
-        
         Returns:
             dict: AI diagnosis results with metadata
         """
+        age_val = age if age is not None else 0
+        gender_val = gender if gender is not None else ''
         try:
-            # Get AI diagnosis
-            ai_result = ai_manager.get_diagnosis(symptoms, age, gender)
+            ai_result = ai_manager.get_diagnosis(symptoms, age_val, gender_val)
             
             # Log the prediction if enabled
             if current_app.config.get('AI_LOG_PREDICTIONS', True):
@@ -78,23 +76,22 @@ class AIIntegration:
                 'fallback_data': self._get_manual_assessment_guidance()
             }
     
-    def process_predictive_analytics(self, symptoms: str, age: int = None,
-                                   priority: str = None, nurse_id: int = None) -> dict:
+    def process_predictive_analytics(self, symptoms: str, age: Optional[int] = None,
+                                   priority: Optional[str] = None, nurse_id: Optional[int] = None) -> dict:
         """
         Process predictive analytics request with AI integration
-        
         Args:
             symptoms: Patient symptoms description
             age: Patient age (optional)
             priority: Triage priority (optional)
             nurse_id: ID of nurse making request (optional)
-        
         Returns:
             dict: AI prediction results with metadata
         """
+        age_val = age if age is not None else 0
+        priority_val = priority if priority is not None else ''
         try:
-            # Get AI predictions
-            ai_result = ai_manager.get_predictions(symptoms, age, priority)
+            ai_result = ai_manager.get_predictions(symptoms, age_val, priority_val)
             
             # Log the prediction if enabled
             if current_app.config.get('AI_LOG_PREDICTIONS', True):
@@ -198,7 +195,7 @@ class AIIntegration:
             return 'Very Low'
     
     def _log_ai_prediction(self, prediction_type: str, input_data: dict,
-                          ai_result: dict, nurse_id: int = None):
+                          ai_result: dict, nurse_id: Optional[int] = None):
         """Log AI prediction to database for monitoring and improvement"""
         try:
             # Create prediction log entry (you may want to create a dedicated table for this)

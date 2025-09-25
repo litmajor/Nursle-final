@@ -5,3 +5,5 @@ flask_session
 psycopg2-binary
 werkzeug
 gunicorn
+python-dotenv
+numpy

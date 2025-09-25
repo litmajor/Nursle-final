@@ -1,22 +1,25 @@
+
 import os
 import random
 from datetime import datetime, date, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_session import Session
-from models import db, Nurse, Patient, MedicalHistory, Symptom, TriageRecord, AnalyticsData
+from models import db, Nurse, Patient, MedicalHistory
 from ai_integration import ai_integration
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 # Config
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'supersecretkey')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://postgres:password@helium:5432/heliumdb')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE')
 
 db.init_app(app)
 Session(app)
@@ -25,24 +28,28 @@ ai_integration.init_app(app)
 # Authentication Routes
 @app.route('/api/signup', methods=['POST'])
 def signup():
-    data = request.json
-    if Nurse.query.filter_by(email=data['email']).first():
+    data = request.json or {}
+    email = data.get('email', '')
+    if Nurse.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 400
     nurse = Nurse(
-        full_name=data['full_name'],
-        email=data['email'],
-        nurse_id=data['nurse_id']
+        data.get('full_name', ''),
+        email,
+        data.get('nurse_id', ''),
+        ''  # password_hash will be set by set_password
     )
-    nurse.set_password(data['password'])
+    nurse.set_password(data.get('password', ''))
     db.session.add(nurse)
     db.session.commit()
     return jsonify({'message': 'Signup successful'}), 201
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.json
-    nurse = Nurse.query.filter_by(email=data['email']).first()
-    if nurse and nurse.check_password(data['password']):
+    data = request.json or {}
+    email = data.get('email', '')
+    password = data.get('password', '')
+    nurse = Nurse.query.filter_by(email=email).first()
+    if nurse and nurse.check_password(password):
         session['nurse_id'] = nurse.id
         return jsonify({'message': 'Login successful', 'first_name': nurse.full_name.split()[0]}), 200
     return jsonify({'error': 'Invalid credentials'}), 401
@@ -53,6 +60,8 @@ def dashboard():
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     nurse = Nurse.query.get(nurse_id)
+    if not nurse:
+        return jsonify({'error': 'Nurse not found'}), 404
     return jsonify({'first_name': nurse.full_name.split()[0], 'email': nurse.email})
 
 # Patient Management Routes
@@ -62,12 +71,12 @@ def create_patient():
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
+    data = request.json or {}
     patient = Patient(
-        first_name=data['first_name'],
-        last_name=data['last_name'],
-        age=data['age'],
-        gender=data['gender']
+        data.get('first_name', ''),
+        data.get('last_name', ''),
+        int(data.get('age', 0)),
+        data.get('gender', '')
     )
     db.session.add(patient)
     db.session.commit()
@@ -107,18 +116,32 @@ def get_patient(patient_id):
 
 # Medical History Routes
 @app.route('/api/patients/<int:patient_id>/medical-history', methods=['POST'])
-def add_medical_history():
+@app.route('/api/patients/<int:patient_id>/medical-history', methods=['POST'])
+def add_medical_history(patient_id):
     nurse_id = session.get('nurse_id')
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
+    data = request.json or {}
+    # Ensure required fields are present and correct types
+    condition = data.get('condition', '')
+    diagnosis_date_str = data.get('diagnosis_date')
+    diagnosis_date = None
+    if diagnosis_date_str:
+        try:
+            diagnosis_date = datetime.fromisoformat(str(diagnosis_date_str))
+        except Exception:
+            diagnosis_date = datetime.utcnow()
+    else:
+        diagnosis_date = datetime.utcnow()
+    treatment = data.get('treatment', '')
+    status = data.get('status', 'Active')
     history = MedicalHistory(
-        patient_id=patient_id,
-        condition=data['condition'],
-        diagnosis_date=datetime.fromisoformat(data['diagnosis_date']),
-        treatment=data.get('treatment'),
-        status=data.get('status', 'Active')
+        patient_id,
+        condition,
+        diagnosis_date,
+        treatment,
+        status
     )
     db.session.add(history)
     db.session.commit()
@@ -130,7 +153,7 @@ def get_medical_history(patient_id):
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    history = MedicalHistory.query.filter_by(patient_id=patient_id).order_by(MedicalHistory.diagnosis_date.desc()).all()
+    history = MedicalHistory.query.filter_by(patient_id=patient_id).order_by(getattr(MedicalHistory, 'diagnosis_date').desc()).all()
     return jsonify([{
         'id': h.id,
         'condition': h.condition,
@@ -147,30 +170,37 @@ def check_symptoms():
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
+    data = request.json or {}
     symptoms = data.get('symptoms', '')
     age = data.get('age')
     gender = data.get('gender')
     
-    if not symptoms.strip():
+    if not symptoms or not symptoms.strip():
         return jsonify({'error': 'Symptoms description is required'}), 400
     
     # Use AI integration for symptom analysis
+    # Ensure age is int and gender is str
+    try:
+        age_val = int(age) if age is not None else 0
+    except Exception:
+        age_val = 0
+    gender_val = str(gender) if gender is not None else ''
     result = ai_integration.process_symptom_check(
         symptoms=symptoms,
-        age=age,
-        gender=gender,
+        age=age_val,
+        gender=gender_val,
         nurse_id=nurse_id
     )
     
-    if result['success']:
-        return jsonify(result['data'])
+    if result.get('success'):
+        return jsonify(result.get('data'))
     else:
         # Return fallback data with error indication
+        fallback = result.get('fallback_data', {})
         return jsonify({
-            'diagnosis': result['fallback_data']['guidance'],
-            'recommendations': result['fallback_data']['manual_factors'],
-            'error': result['error'],
+            'diagnosis': fallback.get('guidance'),
+            'recommendations': fallback.get('manual_factors'),
+            'error': result.get('error'),
             'ai_status': 'unavailable'
         }), 200
 
@@ -212,29 +242,34 @@ def predict_outcome():
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    data = request.json
+    data = request.json or {}
     symptoms = data.get('symptoms', '')
     age = data.get('age')
     priority = data.get('priority', 'Medium')
     
-    if not symptoms.strip():
+    if not symptoms or not symptoms.strip():
         return jsonify({'error': 'Symptoms description is required'}), 400
     
     # Use AI integration for predictive analytics
+    # Ensure age is int
+    try:
+        age_val = int(age) if age is not None else 0
+    except Exception:
+        age_val = 0
     result = ai_integration.process_predictive_analytics(
         symptoms=symptoms,
-        age=age,
+        age=age_val,
         priority=priority,
         nurse_id=nurse_id
     )
     
-    if result['success']:
-        return jsonify(result['data'])
+    if result.get('success'):
+        return jsonify(result.get('data'))
     else:
-        # Return fallback predictions with error indication
+        fallback = result.get('fallback_data', {})
         return jsonify({
-            **result['fallback_data'],
-            'error': result['error'],
+            **fallback,
+            'error': result.get('error'),
             'ai_status': 'unavailable'
         }), 200
 
@@ -286,18 +321,30 @@ def ai_models_info():
     if not nurse_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
+    ai_manager = getattr(app, 'ai_manager', None)
+    if not ai_manager:
+        return jsonify({'error': 'AI manager not initialized'}), 500
     models_info = {
         'diagnostic_engine': {
-            'version': app.ai_manager.diagnostic_engine.model_version,
-            'confidence_threshold': app.ai_manager.diagnostic_engine.confidence_threshold,
-            'supported_categories': list(app.ai_manager.diagnostic_engine.symptom_keywords.keys()),
-            'last_updated': app.ai_manager.diagnostic_engine.created_at.isoformat()
+            'version': ai_manager.diagnostic_engine.model_version,
+            'confidence_threshold': ai_manager.diagnostic_engine.confidence_threshold,
+            'supported_categories': list(ai_manager.diagnostic_engine.symptom_keywords.keys()),
+            'last_updated': ai_manager.diagnostic_engine.created_at.isoformat()
         },
         'predictive_analytics': {
-            'version': app.ai_manager.predictive_analytics.model_version,
-            'supported_conditions': list(app.ai_manager.predictive_analytics.recovery_models.keys()),
-            'last_updated': app.ai_manager.predictive_analytics.created_at.isoformat()
+            'version': ai_manager.predictive_analytics.model_version,
+            'supported_conditions': list(ai_manager.predictive_analytics.recovery_models.keys()),
+            'last_updated': ai_manager.predictive_analytics.created_at.isoformat()
         }
     }
-    
     return jsonify(models_info)
+
+@app.route('/health', methods=['GET'])
+def health():
+    try:
+        # Try a simple DB query to ensure DB is up
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
+        return jsonify({'status': 'healthy'}), 200
+    except Exception as e:
+        return jsonify({'status': 'unhealthy', 'error': str(e)}), 500

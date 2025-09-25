@@ -5,6 +5,11 @@ from datetime import datetime
 db = SQLAlchemy()
 
 class Nurse(db.Model):
+    def __init__(self, full_name, email, nurse_id, password_hash):
+        self.full_name = full_name
+        self.email = email
+        self.nurse_id = nurse_id
+        self.password_hash = password_hash
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
@@ -18,6 +23,11 @@ class Nurse(db.Model):
         return check_password_hash(self.password_hash, password)
 
 class Patient(db.Model):
+    def __init__(self, first_name, last_name, age, gender):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.age = age
+        self.gender = gender
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
@@ -28,6 +38,12 @@ class Patient(db.Model):
     triage_records = db.relationship('TriageRecord', backref='patient', lazy=True)
 
 class MedicalHistory(db.Model):
+    def __init__(self, patient_id, condition, diagnosis_date, treatment, status):
+        self.patient_id = patient_id
+        self.condition = condition
+        self.diagnosis_date = diagnosis_date
+        self.treatment = treatment
+        self.status = status
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
     condition = db.Column(db.String(200), nullable=False)

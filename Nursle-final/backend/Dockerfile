@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Set default database URL for Docker
+ENV DATABASE_URL=postgresql://postgres:password@localhost:5432/heliumdb
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     postgresql-client \

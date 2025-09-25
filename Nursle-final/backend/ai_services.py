@@ -8,7 +8,7 @@ import json
 import numpy as np
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
@@ -32,7 +32,7 @@ class PredictionResult:
     confidence: float
     risk_level: str
     complications_probability: float
-    resource_requirements: Dict[str, any]
+    resource_requirements: Dict[str, Any]
 
 class BaseAIService(ABC):
     """Abstract base class for AI services"""
@@ -388,29 +388,27 @@ class AIServiceManager:
             'voice': False  # Not yet implemented
         }
     
-    def get_diagnosis(self, symptoms: str, age: int = None, gender: str = None) -> Dict:
+    def get_diagnosis(self, symptoms: str, age: Optional[int] = None, gender: Optional[str] = None) -> Dict:
         """Get AI-powered diagnosis"""
         try:
             input_data = {'symptoms': symptoms}
-            if age:
-                input_data['age'] = age
-            if gender:
+            if age is not None:
+                input_data['age'] = str(age)
+            if gender is not None:
                 input_data['gender'] = gender
-            
             return self.diagnostic_engine.process(input_data)
         except Exception as e:
             logger.error(f"Diagnosis error: {str(e)}")
             return self._get_fallback_diagnosis()
     
-    def get_predictions(self, symptoms: str, age: int = None, priority: str = None) -> Dict:
+    def get_predictions(self, symptoms: str, age: Optional[int] = None, priority: Optional[str] = None) -> Dict:
         """Get AI-powered outcome predictions"""
         try:
             input_data = {'symptoms': symptoms}
-            if age:
-                input_data['age'] = age
-            if priority:
-                input_data['priority'] = priority
-            
+            if age is not None:
+                input_data['age'] = str(age)
+            if priority is not None:
+                input_data['priority'] = str(priority)
             return self.predictive_analytics.process(input_data)
         except Exception as e:
             logger.error(f"Prediction error: {str(e)}")
