@@ -105,7 +105,7 @@ export default function Landing() {
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                 <img
-                  src="/src/assets/nursle-logo.jpg"
+                  src="/nursle-logo.jpg"
                   alt="Nursle Logo"
                   className="w-8 h-8 object-contain rounded-lg"
                 />
@@ -292,7 +292,7 @@ export default function Landing() {
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
                   <img
-                    src="/src/assets/nursle-logo.jpg"
+                    src="/nursle-logo.jpg"
                     alt="Nursle Logo"
                     className="w-8 h-8 object-contain rounded-lg"
                   />

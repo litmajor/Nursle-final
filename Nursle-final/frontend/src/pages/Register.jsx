@@ -64,7 +64,7 @@ export default function Register() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-xl shadow-lg mb-4">
             <img 
-              src="/src/assets/nursle-logo.jpg" 
+              src="/nursle-logo.jpg" 
               alt="Nursle Logo" 
               className="w-12 h-12 object-contain rounded-lg"
             />
