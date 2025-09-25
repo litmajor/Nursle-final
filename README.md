@@ -300,3 +300,6 @@ For support and questions:
 ---
 
 **Nursle** - Streamlining healthcare through technology 🏥✨
+
+
+Mirror Architect - Building the future of medical triage applications.
