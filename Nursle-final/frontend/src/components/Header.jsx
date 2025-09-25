@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
 import AIStatusIndicator from './AIStatusIndicator'
-import nursleLogo from '../assets/nursle-logo.jpg'
 
 export default function Header({ title = "Health Triage", showThemeToggle = true, showLogout = true }) {
   const { isDark, toggleTheme } = useTheme()
@@ -20,7 +19,7 @@ export default function Header({ title = "Health Triage", showThemeToggle = true
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
           <img
-            src={nursleLogo}
+            src="/nursle-logo.jpg"
             alt="Nursle Logo"
             className="w-full h-full object-contain rounded"
           />
