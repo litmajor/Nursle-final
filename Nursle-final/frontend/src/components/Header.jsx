@@ -21,7 +21,7 @@ export default function Header({ title = "Health Triage", showThemeToggle = true
           <img
             src="/nursle-logo.jpg"
             alt="Nursle Logo"
-            className="w-full h-full object-contain rounded"
+            style={{ width: 64, height: 64, display: 'block', border: '2px solid red' }}
           />
         </div>
         <h1 className="text-xl font-semibold">{title}</h1>
