@@ -348,3 +348,9 @@ def health():
         return jsonify({'status': 'healthy'}), 200
     except Exception as e:
         return jsonify({'status': 'unhealthy', 'error': str(e)}), 500
+
+
+# Root route for Render and health checks
+@app.route("/", methods=["GET"])
+def index():
+    return {"message": "Nursle Backend is running"}

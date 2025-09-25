@@ -17,6 +17,7 @@ import MedicalHistory from './pages/MedicalHistory'
 import SymptomChecker from './pages/SymptomChecker'
 import TriageAnalytics from './pages/TriageAnalytics'
 import PredictiveAnalytics from './pages/PredictiveAnalytics'
+import { Analytics } from '@vercel/analytics/react'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -24,10 +25,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <Router>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={
+            <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
@@ -73,6 +75,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               </ProtectedRoute>
             } />
           </Routes>
+          <Analytics />
         </Router>
       </ThemeProvider>
     </AuthProvider>
